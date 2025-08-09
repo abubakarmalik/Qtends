@@ -1,6 +1,6 @@
 const { z } = require('zod');
 const jwt = require('jsonwebtoken');
-const User = require('../../models/User');
+const User = require('../../models/user.model');
 const env = require('../../config/env');
 
 const signToken = (id, role) =>

@@ -1,7 +1,197 @@
-### Get users
-GET http://localhost:5000/health
+### ENV
+@baseUrl = http://localhost:5000
+
+# Token comes from the Login response (run Login first, then this will populate)
+@token = {{login.response.body.$.token}}
+
+################################################################################
+# HEALTH
+################################################################################
+
+### Health (public)
+GET {{baseUrl}}/health
+
+################################################################################
+# AUTH
+################################################################################
+
+### Register (public)
+# @name register
+POST {{baseUrl}}/api/auth/register
 Content-Type: application/json
 
+{
+  "name": "Umar",
+  "email": "umar@test.com",
+  "password": "secret123"
+}
 
+### (Manual) Make this user admin in Mongo shell (run once):
+# mongosh
+# use mern_shop
+# db.users.updateOne({ email: "umar@test.com" }, { $set: { role: "admin" } })
 
-### Sign In
+### Login (public) — token will be available as {{login.response.body.$.token}}
+# @name login
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "umar@test.com",
+  "password": "secret123"
+}
+
+################################################################################
+# CATEGORIES (top-level and subcategories)
+################################################################################
+
+### Create Category (admin) — Electronics (auto-slug)
+# @name cat_create_electronics
+POST {{baseUrl}}/api/categories
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Electronics"
+}
+
+### Create Category (admin) — Clothing (auto-slug)
+# @name cat_create_clothing
+POST {{baseUrl}}/api/categories
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Clothing"
+}
+
+### Create Subcategory (admin) — Mobiles under Electronics
+# @name subcat_mobiles
+POST {{baseUrl}}/api/categories
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Mobiles",
+  "parentSlug": "electronics"
+}
+
+### Create Subcategory (admin) — Laptops under Electronics
+# @name subcat_laptops
+POST {{baseUrl}}/api/categories
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Laptops",
+  "parentSlug": "electronics"
+}
+
+### List Categories (public)
+GET {{baseUrl}}/api/categories
+
+### Category: Electronics (public)
+GET {{baseUrl}}/api/categories/electronics
+
+### List Subcategories of Electronics (public)
+GET {{baseUrl}}/api/categories/electronics/subcategories
+
+### Tree (public)
+GET {{baseUrl}}/api/categories/tree
+
+### Update Category (admin) — rename Electronics (slug stays same by default)
+PATCH {{baseUrl}}/api/categories/electronics
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Electronics & Gadgets"
+}
+
+### (Option) Update Category & regenerate slug from new name
+PATCH {{baseUrl}}/api/categories/electronics
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Consumer Electronics",
+  "regenerateSlug": true
+}
+
+### Delete Category (admin) — Clothing (soft delete)
+DELETE {{baseUrl}}/api/categories/clothing
+Authorization: Bearer {{token}}
+
+################################################################################
+# PRODUCTS (with category/subcategory + auto-slug)
+################################################################################
+
+# We’ll capture slugs from create responses so you don’t have to copy/paste.
+# After running the create requests below, these variables will resolve:
+@iphoneSlug = {{prod_create_iphone.response.body.$.item.slug}}
+@ultraSlug  = {{prod_create_ultra.response.body.$.item.slug}}
+
+### Create Product (admin) — iPhone 15 Pro (Electronics → Mobiles)
+# Uses {{$timestamp}} so repeated runs don’t collide on slug
+# @name prod_create_iphone
+POST {{baseUrl}}/api/products
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "title": "Apple iPhone 15 Pro {{$timestamp}}",
+  "price": 1299.99,
+  "stock": 25,
+  "images": ["https://example.com/images/iphone15.jpg"],
+  "categorySlug": "electronics",
+  "subcategorySlug": "mobiles"
+}
+
+### Create Product (admin) — Adidas Ultraboost (no category set)
+# @name prod_create_ultra
+POST {{baseUrl}}/api/products
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "title": "Adidas Ultraboost 22 {{$timestamp}}",
+  "price": 179.99,
+  "stock": 50,
+  "images": ["https://example.com/images/ultraboost22.jpg"]
+}
+
+### List Products (public)
+GET {{baseUrl}}/api/products
+
+### Filter by Category (public) — Electronics
+GET {{baseUrl}}/api/products?category=electronics
+
+### Filter by Subcategory (public) — Mobiles
+GET {{baseUrl}}/api/products?subcategory=mobiles
+
+### Get Single Product (public) — iPhone (captured slug)
+GET {{baseUrl}}/api/products/{{iphoneSlug}}
+
+### Update Product (admin) — change title & regenerate slug (iPhone)
+PATCH {{baseUrl}}/api/products/{{iphoneSlug}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "title": "Apple iPhone 15 Pro Max {{$timestamp}}",
+  "regenerateSlug": true
+}
+
+### Move Product into a different subcategory (admin) — set to laptops
+PATCH {{baseUrl}}/api/products/{{iphoneSlug}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "categorySlug": "electronics",
+  "subcategorySlug": "laptops"
+}
+
+### Delete Product (admin) — soft delete (Ultraboost)
+DELETE {{baseUrl}}/api/products/{{ultraSlug}}
+Authorization: Bearer {{token}}

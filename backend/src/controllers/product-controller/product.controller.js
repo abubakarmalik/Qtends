@@ -1,7 +1,7 @@
 const { z } = require('zod');
 const slugify = require('slugify');
-const Product = require('../../models/Product');
-const Category = require('../../models/Category'); // ⬅️ NEW: needed to resolve slugs
+const Product = require('../../models/product.mode');
+const Category = require('../../models/category.model'); // ⬅️ NEW: needed to resolve slugs
 
 /**
  * Convert text to a clean slug.

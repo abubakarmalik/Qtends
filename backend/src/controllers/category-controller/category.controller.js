@@ -1,6 +1,6 @@
 const { z } = require('zod');
 const slugify = require('slugify');
-const Category = require('../../models/Category');
+const Category = require('../../models/category.model');
 
 /** slug helpers (same style you used for products/categories) */
 function toSlug(input) {
