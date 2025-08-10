@@ -83,7 +83,7 @@ Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
-  "name": "Laptops",
+  "name": "mobiles",
   "parentSlug": "electronics"
 }
 
@@ -119,7 +119,7 @@ Content-Type: application/json
 }
 
 ### Delete Category (admin) — Clothing (soft delete)
-DELETE {{baseUrl}}/api/categories/clothing
+DELETE {{baseUrl}}/api/categories/smartphones
 Authorization: Bearer {{token}}
 
 ################################################################################
@@ -144,7 +144,7 @@ Content-Type: application/json
   "stock": 25,
   "images": ["https://example.com/images/iphone15.jpg"],
   "categorySlug": "electronics",
-  "subcategorySlug": "mobiles"
+  "subcategorySlug": "mobiles-3"
 }
 
 ### Create Product (admin) — Adidas Ultraboost (no category set)
@@ -167,7 +167,7 @@ GET {{baseUrl}}/api/products
 GET {{baseUrl}}/api/products?category=electronics
 
 ### Filter by Subcategory (public) — Mobiles
-GET {{baseUrl}}/api/products?subcategory=mobiles
+GET {{baseUrl}}/api/products?subcategory=smartphones
 
 ### Get Single Product (public) — iPhone (captured slug)
 GET {{baseUrl}}/api/products/{{iphoneSlug}}
@@ -195,3 +195,135 @@ Content-Type: application/json
 ### Delete Product (admin) — soft delete (Ultraboost)
 DELETE {{baseUrl}}/api/products/{{ultraSlug}}
 Authorization: Bearer {{token}}
+
+################################################################################
+################################################################################
+# CART (auth required)
+################################################################################
+
+### Get My Cart
+GET {{baseUrl}}/api/cart
+Authorization: Bearer {{token}}
+
+### Add Item — iPhone (from earlier)
+POST {{baseUrl}}/api/cart/items
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "productSlug": "{{iphoneSlug}}",
+  "qty": 2
+}
+
+### Update Item Qty — iPhone → 3
+PATCH {{baseUrl}}/api/cart/items/{{iphoneSlug}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "qty": 1
+}
+
+### Remove Item — iPhone
+DELETE {{baseUrl}}/api/cart/items/{{iphoneSlug}}
+Authorization: Bearer {{token}}
+
+### Clear Cart
+DELETE {{baseUrl}}/api/cart
+Authorization: Bearer {{token}}
+
+################################################################################
+# ORDERS / CHECKOUT
+################################################################################
+
+# Address template you can reuse
+@fullName = Umar
+@phone = 03001234567
+@address1 = 221B Baker Street
+@address2 =
+@city = Karachi
+@state = Sindh
+@postalCode = 74200
+@country = PK
+
+### Get My Cart (ensure it has items)
+GET {{baseUrl}}/api/cart
+Authorization: Bearer {{token}}
+
+### Add one more iPhone to cart (if needed)
+POST {{baseUrl}}/api/cart/items
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "productSlug": "{{iphoneSlug}}",
+  "qty": 1
+}
+
+### Create Order from Cart (auth)
+# @name create_order
+POST {{baseUrl}}/api/orders
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "shippingAddress": {
+    "fullName": "{{fullName}}",
+    "phone": "{{phone}}",
+    "address1": "{{address1}}",
+    "address2": "{{address2}}",
+    "city": "{{city}}",
+    "state": "{{state}}",
+    "postalCode": "{{postalCode}}",
+    "country": "{{country}}"
+  },
+  "paymentMethod": "cod"
+}
+
+# capture order id for later
+@orderId = {{create_order.response.body.$.order._id}}
+
+### My Orders (auth)
+GET {{baseUrl}}/api/orders
+Authorization: Bearer {{token}}
+
+### Get Order by ID (auth — owner or admin)
+GET {{baseUrl}}/api/orders/{{orderId}}
+Authorization: Bearer {{token}}
+
+### Cancel My Order (auth) — only if pending + unpaid
+DELETE {{baseUrl}}/api/orders/{{orderId}}
+Authorization: Bearer {{token}}
+
+### ADMIN — List All Orders
+GET {{baseUrl}}/api/orders/admin/all
+Authorization: Bearer {{token}}
+
+### ADMIN — Mark Order Paid
+PATCH {{baseUrl}}/api/orders/{{orderId}}/status
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "paymentStatus": "paid",
+  "status": "paid"
+}
+
+### ADMIN — Mark Order Shipped
+PATCH {{baseUrl}}/api/orders/{{orderId}}/status
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "status": "shipped"
+}
+
+### ADMIN — Mark Order Delivered
+PATCH {{baseUrl}}/api/orders/{{orderId}}/status
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "status": "delivered"
+}
+

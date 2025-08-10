@@ -1,6 +1,6 @@
 const { z } = require('zod');
 const slugify = require('slugify');
-const Product = require('../../models/product.mode');
+const Product = require('../../models/product.model');
 const Category = require('../../models/category.model'); // ⬅️ NEW: needed to resolve slugs
 
 /**
